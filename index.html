@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI एसेट कैप्चर ऐप</title>
+    <title>फ़ाइल अपलोडर</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -16,9 +16,6 @@
             max-width: 480px;
             margin: auto;
             padding: 1rem;
-        }
-        .bg-gradient-header {
-            background-image: linear-gradient(to right, #6b46c1, #4c51bf);
         }
         .file-input {
             width: 0.1px;
@@ -40,7 +37,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            space-x-2: 0.5rem;
+            gap: 0.5rem;
             transition: all 0.3s ease;
         }
         .file-input-label:hover {
@@ -54,25 +51,35 @@
 <body>
     <div class="container min-h-screen flex flex-col justify-center items-center p-4">
         <div class="bg-white p-6 rounded-3xl shadow-2xl w-full max-w-sm">
-            <div class="bg-gradient-header rounded-xl p-6 text-white text-center mb-6">
-                <h1 class="text-2xl font-bold mb-1">एसेट कैप्चर</h1>
-                <p class="text-sm">फोटो लेकर टेक्स्ट पढ़ें</p>
-            </div>
+            <h1 class="text-2xl font-bold text-center mb-6">फ़ाइलें अपलोड करें</h1>
             
             <form id="uploadForm">
-                <!-- This input element opens the camera -->
-                <input type="file" id="fileInput" accept="image/*" capture="environment" multiple class="hidden">
+                <div class="space-y-4">
+                    <!-- Option 1: Take a Picture -->
+                    <input type="file" id="cameraInput" accept="image/*" capture="environment" multiple class="file-input">
+                    <label for="cameraInput" class="file-input-label bg-green-500 hover:bg-green-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-camera">
+                            <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
+                            <circle cx="12" cy="13" r="3"/>
+                        </svg>
+                        <span>तस्वीर लें</span>
+                    </label>
+
+                    <!-- Option 2: Upload Files -->
+                    <input type="file" id="fileInput" accept="image/*, .pdf" multiple class="file-input">
+                    <label for="fileInput" class="file-input-label bg-indigo-600 hover:bg-indigo-700">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-upload">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="17 8 12 3 7 8"/>
+                            <line x1="12" x2="12" y1="3" y2="15"/>
+                        </svg>
+                        <span>फ़ाइल अपलोड करें</span>
+                    </label>
+                </div>
                 
-                <label for="fileInput" class="file-input-label">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-camera">
-                        <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
-                        <circle cx="12" cy="13" r="3"/>
-                    </svg>
-                    <span>तस्वीर लें या फ़ाइल अपलोड करें</span>
-                </label>
 
                 <div id="imagePreviewContainer" class="mt-4 text-center hidden">
-                    <p class="text-sm text-gray-600 mb-2">स्कैन की गई तस्वीरें:</p>
+                    <p class="text-sm text-gray-600 mb-2">चयनित तस्वीरें:</p>
                     <div id="previewGrid" class="grid grid-cols-2 gap-4"></div>
                 </div>
 
@@ -82,24 +89,27 @@
             </form>
 
             <div id="messageBox" class="mt-4 p-3 text-center rounded-lg hidden transition-opacity duration-300"></div>
-
         </div>
     </div>
 
     <script>
         const form = document.getElementById('uploadForm');
+        const cameraInput = document.getElementById('cameraInput');
         const fileInput = document.getElementById('fileInput');
         const previewGrid = document.getElementById('previewGrid');
         const imagePreviewContainer = document.getElementById('imagePreviewContainer');
         const messageBox = document.getElementById('messageBox');
+        let selectedFiles = [];
 
-        fileInput.addEventListener('change', (e) => {
+        function handleFileChange(e) {
+            // Check which input triggered the event
+            const newFiles = Array.from(e.target.files);
+            selectedFiles = [...selectedFiles, ...newFiles];
+
             previewGrid.innerHTML = ''; // Clear previous previews
-            const files = e.target.files;
-            
-            if (files.length > 0) {
+            if (selectedFiles.length > 0) {
                 imagePreviewContainer.classList.remove('hidden');
-                for (const file of files) {
+                selectedFiles.forEach(file => {
                     const reader = new FileReader();
                     reader.onload = (e) => {
                         const img = document.createElement('img');
@@ -108,33 +118,55 @@
                         previewGrid.appendChild(img);
                     };
                     reader.readAsDataURL(file);
-                }
+                });
             } else {
                 imagePreviewContainer.classList.add('hidden');
             }
-        });
+        }
 
-        form.addEventListener('submit', (e) => {
+        cameraInput.addEventListener('change', handleFileChange);
+        fileInput.addEventListener('change', handleFileChange);
+
+
+        form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const files = fileInput.files;
 
-            if (files.length === 0) {
-                showMessage("कृपया सबमिट करने के लिए फ़ोटो चुनें।", "bg-red-200 text-red-800");
+            if (selectedFiles.length === 0) {
+                showMessage("कृपया सबमिट करने के लिए फ़ाइलें चुनें।", "bg-red-200 text-red-800");
                 return;
             }
 
-            // This is where you would send the files to an API or process them further
-            console.log("Submitting files:", files);
+            // This is the key part for sending files to a server
+            const formData = new FormData();
+            for (const file of selectedFiles) {
+                formData.append('files', file);
+            }
             
-            // Simulating a successful submission
-            showMessage(`${files.length} फ़ाइलें सफलतापूर्वक सबमिट की गईं!`, "bg-green-200 text-green-800");
+            try {
+                showMessage("फ़ाइलें सबमिट की जा रही हैं...", "bg-yellow-200 text-yellow-800");
+                // Replace '/upload' with the actual URL of your server
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
 
-            // You can add your OCR logic here later for each file
+                if (response.ok) {
+                    showMessage(`${selectedFiles.length} फ़ाइलें सफलतापूर्वक सबमिट की गईं!`, "bg-green-200 text-green-800");
+                    selectedFiles = []; // Clear files after successful upload
+                    previewGrid.innerHTML = '';
+                    imagePreviewContainer.classList.add('hidden');
+                } else {
+                    showMessage("सबमिशन में कोई त्रुटि हुई। कृपया फिर से प्रयास करें।", "bg-red-200 text-red-800");
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showMessage("नेटवर्क त्रुटि। कृपया सर्वर की जाँच करें।", "bg-red-200 text-red-800");
+            }
         });
 
         function showMessage(text, className) {
             messageBox.textContent = text;
-            messageBox.className = `p-3 text-center rounded-lg ${className}`;
+            messageBox.className = `mt-4 p-3 text-center rounded-lg ${className}`;
             messageBox.classList.remove('hidden');
             setTimeout(() => {
                 messageBox.classList.add('hidden');
@@ -143,4 +175,3 @@
     </script>
 </body>
 </html>
-
