@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Transcription App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+        }
+        .text-area-container {
+            position: relative;
+        }
+        .disclaimer-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(240, 244, 248, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            text-align: center;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+
+    <div class="bg-white p-6 rounded-2xl shadow-xl max-w-lg w-full">
+        <div class="flex items-center justify-between mb-6">
+            <h1 class="text-2xl font-bold text-gray-800">AI Transcriber (हिन्दी)</h1>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-mic-vocal text-blue-500">
+                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                <line x1="12" x2="12" y1="19" y2="22"/>
+            </svg>
+        </div>
+
+        <div class="mb-4">
+            <label for="transcript" class="block text-sm font-medium text-gray-700 mb-2">Transcript:</label>
+            <div class="text-area-container relative">
+                <textarea id="transcript" class="w-full h-40 p-3 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800 transition-all duration-300" placeholder="बोलने के लिए माइक बटन दबाएँ..." readonly></textarea>
+                <div id="disclaimer-overlay" class="disclaimer-overlay rounded-lg hidden">
+                    <p class="text-sm font-medium text-gray-600">यह ऐप केवल डेटा संग्रह के लिए है। कृपया इसमें कोई भी निजी या संवेदनशील जानकारी दर्ज न करें।</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-4 mb-6">
+            <button id="startButton" class="w-full flex-1 py-3 px-6 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-md transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                माइक चालू करें (Start Mic)
+            </button>
+            <button id="stopButton" class="w-full flex-1 py-3 px-6 bg-gray-500 hover:bg-gray-600 text-white font-semibold rounded-xl shadow-md transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2" disabled>
+                माइक बंद करें (Stop Mic)
+            </button>
+        </div>
+
+        <div class="flex space-x-4">
+            <button id="saveButton" class="w-full py-3 px-6 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-xl shadow-md transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
+                रिकॉर्डिंग सेव करें (Save)
+            </button>
+            <button id="clearButton" class="w-full py-3 px-6 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-xl shadow-md transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2">
+                साफ करें (Clear)
+            </button>
+        </div>
+
+        <div id="statusMessage" class="mt-4 text-sm text-center text-gray-600"></div>
+
+    </div>
+
+    <script>
+        const startButton = document.getElementById('startButton');
+        const stopButton = document.getElementById('stopButton');
+        const saveButton = document.getElementById('saveButton');
+        const clearButton = document.getElementById('clearButton');
+        const transcriptArea = document.getElementById('transcript');
+        const statusMessage = document.getElementById('statusMessage');
+        const disclaimerOverlay = document.getElementById('disclaimer-overlay');
+
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+        if (!SpeechRecognition) {
+            alert('माफ़ करें, आपके ब्राउज़र में स्पीच रिकॉग्निशन समर्थित नहीं है। कृपया Google Chrome का उपयोग करें। (Sorry, Speech Recognition is not supported in your browser. Please use Google Chrome.)');
+            startButton.disabled = true;
+            stopButton.disabled = true;
+        } else {
+            const recognition = new SpeechRecognition();
+            recognition.lang = 'hi-IN';
+            recognition.continuous = true;
+            recognition.interimResults = true;
+
+            let finalTranscript = '';
+
+            startButton.onclick = () => {
+                recognition.start();
+                startButton.disabled = true;
+                stopButton.disabled = false;
+                clearButton.disabled = true;
+                statusMessage.textContent = 'माइक चालू है। कृपया बोलें... (Mic is on. Please speak...)';
+                disclaimerOverlay.classList.remove('hidden');
+            };
+
+            stopButton.onclick = () => {
+                recognition.stop();
+                startButton.disabled = false;
+                stopButton.disabled = true;
+                clearButton.disabled = false;
+                statusMessage.textContent = 'रिकॉर्डिंग बंद है। (Recording stopped.)';
+                disclaimerOverlay.classList.add('hidden');
+            };
+
+            clearButton.onclick = () => {
+                transcriptArea.value = '';
+                finalTranscript = '';
+                statusMessage.textContent = '';
+            };
+
+            saveButton.onclick = () => {
+                if (finalTranscript.trim() !== '') {
+                    // This is where you would handle saving the data.
+                    // For now, we'll just log it and offer to copy it.
+                    console.log('Transcript saved:', finalTranscript);
+                    
+                    const el = document.createElement('textarea');
+                    el.value = finalTranscript;
+                    document.body.appendChild(el);
+                    el.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(el);
+
+                    statusMessage.textContent = 'टेक्स्ट कॉपी हो गया है। इसे कहीं भी पेस्ट कर सकते हैं। (Text has been copied. You can paste it anywhere.)';
+                } else {
+                    statusMessage.textContent = 'सेव करने के लिए कोई टेक्स्ट नहीं है। (No text to save.)';
+                }
+            };
+
+            recognition.onresult = (event) => {
+                let interimTranscript = '';
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) {
+                        finalTranscript += event.results[i][0].transcript;
+                    } else {
+                        interimTranscript += event.results[i][0].transcript;
+                    }
+                }
+                transcriptArea.value = finalTranscript + interimTranscript;
+            };
+
+            recognition.onend = () => {
+                if (!startButton.disabled) {
+                    startButton.disabled = false;
+                    stopButton.disabled = true;
+                    statusMessage.textContent = 'माइक बंद है। (Mic is off.)';
+                }
+                disclaimerOverlay.classList.add('hidden');
+            };
+
+            recognition.onerror = (event) => {
+                console.error(event.error);
+                statusMessage.textContent = `एक त्रुटि हुई: ${event.error} (An error occurred: ${event.error})`;
+                startButton.disabled = false;
+                stopButton.disabled = true;
+                disclaimerOverlay.classList.add('hidden');
+            };
+        }
+    </script>
+
+</body>
+</html>
