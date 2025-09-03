@@ -1,12 +1,145 @@
-<p>
-  <label for="soundFile">What does your voice sound like?:</label>
-  <input type="file" id="soundFile" capture="user" accept="audio/*" />
-</p>
-<p>
-  <label for="videoFile">Upload a video:</label>
-  <input type="file" id="videoFile" capture="environment" accept="video/*" />
-</p>
-<p>
-  <label for="imageFile">Upload a photo of yourself:</label>
-  <input type="file" id="imageFile" capture="user" accept="image/*" />
-</p>
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI एसेट कैप्चर ऐप</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            color: #1e293b;
+        }
+        .container {
+            max-width: 480px;
+            margin: auto;
+            padding: 1rem;
+        }
+        .bg-gradient-header {
+            background-image: linear-gradient(to right, #6b46c1, #4c51bf);
+        }
+        .file-input {
+            width: 0.1px;
+            height: 0.1px;
+            opacity: 0;
+            overflow: hidden;
+            position: absolute;
+            z-index: -1;
+        }
+        .file-input-label {
+            width: 100%;
+            cursor: pointer;
+            text-align: center;
+            background-color: #3b82f6;
+            color: white;
+            font-weight: 600;
+            padding: 1rem;
+            border-radius: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            space-x-2: 0.5rem;
+            transition: all 0.3s ease;
+        }
+        .file-input-label:hover {
+            background-color: #2563eb;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container min-h-screen flex flex-col justify-center items-center p-4">
+        <div class="bg-white p-6 rounded-3xl shadow-2xl w-full max-w-sm">
+            <div class="bg-gradient-header rounded-xl p-6 text-white text-center mb-6">
+                <h1 class="text-2xl font-bold mb-1">एसेट कैप्चर</h1>
+                <p class="text-sm">फोटो लेकर टेक्स्ट पढ़ें</p>
+            </div>
+            
+            <form id="uploadForm">
+                <!-- This input element opens the camera -->
+                <input type="file" id="fileInput" accept="image/*" capture="environment" multiple class="hidden">
+                
+                <label for="fileInput" class="file-input-label">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-camera">
+                        <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
+                        <circle cx="12" cy="13" r="3"/>
+                    </svg>
+                    <span>तस्वीर लें या फ़ाइल अपलोड करें</span>
+                </label>
+
+                <div id="imagePreviewContainer" class="mt-4 text-center hidden">
+                    <p class="text-sm text-gray-600 mb-2">स्कैन की गई तस्वीरें:</p>
+                    <div id="previewGrid" class="grid grid-cols-2 gap-4"></div>
+                </div>
+
+                <button type="submit" class="mt-6 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-4 rounded-xl shadow-md transition-all duration-300">
+                    डेटा सबमिट करें
+                </button>
+            </form>
+
+            <div id="messageBox" class="mt-4 p-3 text-center rounded-lg hidden transition-opacity duration-300"></div>
+
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('uploadForm');
+        const fileInput = document.getElementById('fileInput');
+        const previewGrid = document.getElementById('previewGrid');
+        const imagePreviewContainer = document.getElementById('imagePreviewContainer');
+        const messageBox = document.getElementById('messageBox');
+
+        fileInput.addEventListener('change', (e) => {
+            previewGrid.innerHTML = ''; // Clear previous previews
+            const files = e.target.files;
+            
+            if (files.length > 0) {
+                imagePreviewContainer.classList.remove('hidden');
+                for (const file of files) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const img = document.createElement('img');
+                        img.src = e.target.result;
+                        img.classList.add('rounded-lg', 'border', 'border-gray-300', 'w-full', 'h-auto');
+                        previewGrid.appendChild(img);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            } else {
+                imagePreviewContainer.classList.add('hidden');
+            }
+        });
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const files = fileInput.files;
+
+            if (files.length === 0) {
+                showMessage("कृपया सबमिट करने के लिए फ़ोटो चुनें।", "bg-red-200 text-red-800");
+                return;
+            }
+
+            // This is where you would send the files to an API or process them further
+            console.log("Submitting files:", files);
+            
+            // Simulating a successful submission
+            showMessage(`${files.length} फ़ाइलें सफलतापूर्वक सबमिट की गईं!`, "bg-green-200 text-green-800");
+
+            // You can add your OCR logic here later for each file
+        });
+
+        function showMessage(text, className) {
+            messageBox.textContent = text;
+            messageBox.className = `p-3 text-center rounded-lg ${className}`;
+            messageBox.classList.remove('hidden');
+            setTimeout(() => {
+                messageBox.classList.add('hidden');
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
